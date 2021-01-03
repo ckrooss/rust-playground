@@ -1,0 +1,9 @@
+{
+    "rust-analyzer.inlayHints.typeHints.enable": false,
+    "editor.formatOnSave": true,
+    "editor.formatOnSaveMode": "file",
+    "rust-analyzer.checkOnSave.command": "clippy",
+    "editor.rulers": [
+        120
+    ],
+}
