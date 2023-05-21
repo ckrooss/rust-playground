@@ -58,33 +58,41 @@ impl FlashDevice for SparseDevice {
 
         let end = offset + data.len();
 
+        let mut result_chunks: BTreeMap<usize, Vec<u8>> = BTreeMap::new();
+        let mut data_inserted: bool = false;
+
         for (chunk_offset, chunk_data) in self.chunks.iter_mut() {
             let chunk_len = chunk_data.len();
             let chunk_end = chunk_offset + chunk_len;
 
-            if *chunk_offset >= end {
-                break;
-            }
-
-            if chunk_end <= offset {
+            // Irrelevant: reuse chunk
+            if *chunk_offset >= end || chunk_end <= offset {
+                result_chunks.insert(*chunk_offset, chunk_data.to_vec());
                 continue;
             }
 
+            // New chunk exactly replaces old chunk
             if *chunk_offset == offset && chunk_len == data.len() {
-                *chunk_data = data.to_vec();
-                return;
-            }
-
-            if offset <= *chunk_offset && end >= chunk_end + (*chunk_offset - offset) {
-                chunk_data.clear();
+                result_chunks.insert(offset, data.to_vec());
+                data_inserted = true;
                 break;
             }
 
+            // New chunk starts before, ends after and completely replaces old chunk
+            if offset <= *chunk_offset && end >= chunk_end + (*chunk_offset - offset) {
+                result_chunks.insert(offset, data.to_vec());
+                data_inserted = true;
+                break;
+            }
+
+            // New chunk starts inside existing chunk
             if *chunk_offset <= offset && chunk_end >= offset {
                 let new_len = chunk_len + end - chunk_end;
                 chunk_data.resize(new_len, 0);
                 chunk_data[new_len - data.len()..].copy_from_slice(data);
-                return;
+                result_chunks.insert(*chunk_offset, chunk_data.to_vec());
+                data_inserted = true;
+                break;
             }
 
             if *chunk_offset <= end && chunk_end >= end {
@@ -95,15 +103,18 @@ impl FlashDevice for SparseDevice {
                 // Where the old data we need starts
                 let old_data_begin = chunk_data.len() - additional;
                 // Where the new data we need stops
-                let new_data_end = new_data.len() - additional;
-                new_data[new_data_end..].copy_from_slice(&chunk_data[old_data_begin..]);
-                self.chunks.insert(offset, new_data);
-                return;
+                new_data[data.len()..].copy_from_slice(&chunk_data[old_data_begin..]);
+                result_chunks.insert(offset, new_data);
+                data_inserted = true;
+                break;
             }
         }
 
-        self.chunks.insert(offset, data.to_vec());
-        self.chunks.retain(|_, v| !v.is_empty());
+        if !data_inserted {
+            result_chunks.insert(offset, data.to_vec());
+        }
+
+        self.chunks = result_chunks;
     }
 
     fn erase(&mut self, offset: usize, size: usize) {

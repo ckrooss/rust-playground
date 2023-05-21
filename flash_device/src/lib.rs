@@ -115,7 +115,7 @@ mod test {
             let mut dev = SparseDevice::new(1024);
             let data1: Vec<u8> = vec![0x01, 0x02, 0x03];
             let data2: Vec<u8> = vec![0x04, 0x05, 0x06, 0x07];
-            let result: Vec<u8> = vec![0x04, 0x05, 0x06, 0x01, 0x02];
+            let result: Vec<u8> = vec![0x04, 0x05, 0x06, 0x07, 0x02];
             dev.write(3, &data1);
             dev.write(0, &data2);
             assert_eq!(dev.read(0, 5), result);
@@ -125,7 +125,7 @@ mod test {
             let mut dev = SparseDevice::new(1024);
             let data1: Vec<u8> = vec![0x01, 0x02, 0x03];
             let data2: Vec<u8> = vec![0x04, 0x05, 0x06];
-            let result: Vec<u8> = vec![0x04, 0x05, 0x01, 0x02];
+            let result: Vec<u8> = vec![0x04, 0x05, 0x06, 0x02];
             dev.write(2, &data1);
             dev.write(0, &data2);
             assert_eq!(dev.read(0, 4), result);
@@ -144,5 +144,48 @@ mod test {
         dev.write(2, &data2);
         assert_eq!(dev.read(0, 5), result);
         assert_eq!(dev.used_chunks(), 1);
+    }
+
+    #[test]
+    fn write_overlap_complete() {
+        let mut dev = SparseDevice::new(1024);
+
+        let data1: Vec<u8> = vec![0x01, 0x02, 0x03];
+        let data2: Vec<u8> = vec![0x04, 0x05, 0x06];
+        let result: Vec<u8> = vec![0x04, 0x05, 0x06];
+        dev.write(0, &data1);
+        dev.write(0, &data2);
+        assert_eq!(dev.read(0, 3), result);
+        assert_eq!(dev.used_chunks(), 1);
+    }
+
+    #[test]
+    fn read_overlap() {
+        let mut dev = SparseDevice::new(1024);
+
+        let write_data: Vec<u8> = vec![0x01, 0x02, 0x03];
+        dev.write(20, &write_data);
+
+        let expected_data: Vec<u8> =
+            vec![0xff, 0xff, 0xff, 0xff, 0xff, 0x01, 0x02, 0x03, 0xff, 0xff];
+        assert_eq!(dev.read(15, 10), expected_data);
+        assert_eq!(dev.used_chunks(), 1);
+    }
+
+    #[test]
+    fn read_overlap_multiple_chunks() {
+        let mut dev = SparseDevice::new(1024);
+
+        let write_data: Vec<u8> = vec![0x01, 0x02, 0x03];
+        dev.write(3, &write_data);
+        assert_eq!(dev.used_chunks(), 1);
+        dev.write(7, &write_data);
+        assert_eq!(dev.used_chunks(), 2);
+
+        // Should now be ff ff ff 01 02 03 ff 01 02 03
+        assert_eq!(
+            dev.read(0, 10),
+            &[0xff, 0xff, 0xff, 0x01, 0x02, 0x03, 0xff, 0x01, 0x02, 0x03]
+        );
     }
 }
