@@ -1,5 +1,6 @@
 pub mod device;
-use device::{FlashDevice, NandDevice};
+use device::FlashDevice;
+use device::NandDevice;
 
 #[test]
 fn test_read() {

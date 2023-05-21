@@ -1,5 +1,3 @@
-use std::option::Option;
-
 pub trait FlashDevice {
     fn read(&self, offset: usize) -> u8;
     fn read_block(&self, offset: usize, size: usize) -> &[u8];
@@ -24,7 +22,7 @@ impl NandDevice {
 impl FlashDevice for NandDevice {
     /// ```
     /// /// Read a single u8 block from the NAND device
-    /// use project4::device::{FlashDevice, NandDevice};
+    /// use flash_device::device::{FlashDevice, NandDevice};
     /// let dev = NandDevice::new(1024);
     /// let data = dev.read(0);
     /// assert_eq!(data, 0xff);
