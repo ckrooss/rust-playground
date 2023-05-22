@@ -1,4 +1,5 @@
 use crate::flash_device::FlashDevice;
+use anyhow::{bail, Result};
 use std::cmp::{max, min};
 use std::collections::BTreeMap;
 
@@ -21,9 +22,9 @@ impl SparseDevice {
 }
 
 impl FlashDevice for SparseDevice {
-    fn read(&self, offset: usize, size: usize) -> Vec<u8> {
+    fn read(&self, offset: usize, size: usize) -> Result<Vec<u8>> {
         if offset + size > self.size {
-            panic!("Error::OutOfBounds");
+            bail!("Error::OutOfBounds");
         }
         let mut read_data = vec![0xFF; size];
 
@@ -48,12 +49,12 @@ impl FlashDevice for SparseDevice {
                 .copy_from_slice(&chunk_data[src_start..src_end]);
         }
 
-        read_data
+        Ok(read_data)
     }
 
-    fn write(&mut self, offset: usize, data: &[u8]) {
+    fn write(&mut self, offset: usize, data: &[u8]) -> Result<()> {
         if offset + data.len() > self.size {
-            panic!("Error::OutOfBounds");
+            bail!("Error::OutOfBounds");
         }
 
         let end = offset + data.len();
@@ -115,11 +116,12 @@ impl FlashDevice for SparseDevice {
         }
 
         self.chunks = result_chunks;
+        Ok(())
     }
 
-    fn erase(&mut self, offset: usize, size: usize) {
+    fn erase(&mut self, offset: usize, size: usize) -> Result<()> {
         if offset + size > self.size {
-            panic!("Error::OutOfBounds");
+            bail!("Error::OutOfBounds");
         }
 
         let mut remove_keys = Vec::new();
@@ -131,9 +133,12 @@ impl FlashDevice for SparseDevice {
         for key in remove_keys {
             self.chunks.remove(&key);
         }
+
+        Ok(())
     }
 
-    fn erase_device(&mut self) {
+    fn erase_device(&mut self) -> Result<()> {
         self.chunks.clear();
+        Ok(())
     }
 }
