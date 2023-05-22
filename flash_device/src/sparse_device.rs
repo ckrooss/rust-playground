@@ -23,6 +23,9 @@ impl SparseDevice {
 
 impl FlashDevice for SparseDevice {
     fn read(&self, offset: usize, size: usize) -> Result<Vec<u8>> {
+        if size == 0 {
+            bail!("Invalid read-size 0");
+        }
         if offset + size > self.size {
             bail!("Error::OutOfBounds");
         }

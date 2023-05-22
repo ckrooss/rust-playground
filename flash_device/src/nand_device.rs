@@ -28,6 +28,10 @@ impl FlashDevice for NandDevice {
     }
 
     fn write(&mut self, offset: usize, data: &[u8]) -> Result<()> {
+        if offset + data.len() > self.data.len() {
+            bail!("Cannot write past device boundary");
+        }
+
         for (i, val) in data.iter().enumerate() {
             if self.data[offset + i] != 0xff {
                 bail!("Write to non-erased block");

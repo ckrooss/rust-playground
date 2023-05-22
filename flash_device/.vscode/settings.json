@@ -6,4 +6,14 @@
     "editor.rulers": [
         120
     ],
+    "coverage-gutters.coverageFileNames": [
+        "tests.lcov",
+        "cov.xml",
+        "coverage.xml",
+        "jacoco.xml",
+        "coverage.cobertura.xml"
+    ],
+    "coverage-gutters.showLineCoverage": true,
+    "coverage-gutters.showRulerCoverage": true,
+    "explorer.excludeGitIgnore": true
 }

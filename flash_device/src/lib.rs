@@ -21,6 +21,15 @@ mod test {
         Ok(())
     }
 
+    #[test_case(&mut NandDevice::new(1024))]
+    #[test_case(&mut SparseDevice::new(1024))]
+    #[test_case(&mut FileDevice::new(1024, "test_bad_reads.bin")?)]
+    fn test_bad_reads(dev: &mut dyn FlashDevice) -> Result {
+        assert!(dev.read(0, 0).is_err());
+        assert!(dev.read(1023, 2).is_err());
+        Ok(())
+    }
+
     #[test_case(&mut NandDevice::new(8))]
     #[test_case(&mut SparseDevice::new(8))]
     #[test_case(&mut FileDevice::new(8, "test_read_edges.bin")?)]
@@ -38,6 +47,14 @@ mod test {
     #[test_case(&mut FileDevice::new(1024, "test_write.bin")?)]
     fn test_write(dev: &mut dyn FlashDevice) -> Result {
         dev.write(0, &[0])
+    }
+
+    #[test_case(&mut NandDevice::new(8))]
+    #[test_case(&mut SparseDevice::new(8))]
+    #[test_case(&mut FileDevice::new(8, "test_bad_writes.bin")?)]
+    fn test_bad_writes(dev: &mut dyn FlashDevice) -> Result {
+        assert!(dev.write(7, &[0x01, 0x02, 0x03]).is_err());
+        Ok(())
     }
 
     #[test_case(&mut NandDevice::new(8))]
